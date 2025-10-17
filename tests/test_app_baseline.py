@@ -5,9 +5,14 @@ client = TestClient(app)
 
 
 def test_root_redirects_to_static_index():
-    resp = client.get("/", allow_redirects=False)
-    assert resp.status_code in (302, 307)
-    assert resp.headers["location"].endswith("/static/index.html")
+    resp = client.get("/")
+    # Depending on TestClient follow_redirects behavior, we may see a redirect or the final page
+    assert resp.status_code in (200, 302, 307)
+    if resp.status_code in (302, 307):
+        assert resp.headers["location"].endswith("/static/index.html")
+    else:
+        # httpx Response has a URL attribute
+        assert str(resp.url).endswith("/static/index.html")
 
 
 def test_get_activities_shape():
