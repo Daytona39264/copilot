@@ -9,6 +9,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse
 import os
+import re
 from pathlib import Path
 
 app = FastAPI(title="Mergington High School API",
@@ -52,16 +53,40 @@ def get_activities():
     return activities
 
 
+EMAIL_RE = re.compile(r"^[^@\s]+@mergington\.edu$", re.IGNORECASE)
+
+
 @app.post("/activities/{activity_name}/signup")
 def signup_for_activity(activity_name: str, email: str):
-    """Sign up a student for an activity"""
+    """Sign up a student for an activity
+
+    Validations (subject to acceptance criteria):
+    - 404 if activity not found
+    - 400 if email is invalid or wrong domain
+    - 409 if already signed up (case-insensitive)
+    - 409 if activity is full
+    """
     # Validate activity exists
     if activity_name not in activities:
         raise HTTPException(status_code=404, detail="Activity not found")
 
+    # Normalize and validate email
+    normalized = (email or "").strip()
+    if not normalized or not EMAIL_RE.match(normalized):
+        raise HTTPException(status_code=400, detail="Invalid email")
+
     # Get the specific activity
     activity = activities[activity_name]
 
+    # Prevent duplicate signups (case-insensitive)
+    norm_lower = normalized.lower()
+    if any(p.lower() == norm_lower for p in activity["participants"]):
+        raise HTTPException(status_code=409, detail="Already signed up")
+
+    # Enforce capacity
+    if len(activity["participants"]) >= activity["max_participants"]:
+        raise HTTPException(status_code=409, detail="Activity is full")
+
     # Add student
-    activity["participants"].append(email)
-    return {"message": f"Signed up {email} for {activity_name}"}
+    activity["participants"].append(norm_lower)
+    return {"message": f"Signed up {normalized} for {activity_name}"}
