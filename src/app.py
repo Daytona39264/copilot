@@ -115,11 +115,14 @@ def signup_for_activity(activity_name: str, email: str):
     activity = activities[activity_name]
 
     # Prevent duplicate signups (case-insensitive)
-    # Use set for O(1) lookup instead of O(n) linear search
+    # Build a set for O(1) lookup. While set creation is O(n), for the small
+    # participant lists in this app (max 30), this provides predictable O(1) lookup
+    # performance vs O(n) worst-case with any() generator expression.
     norm_lower = normalized.lower()
-    participants_lower = {p.lower() for p in activity["participants"]}
-    if norm_lower in participants_lower:
-        raise HTTPException(status_code=409, detail="Already signed up")
+    if activity["participants"]:
+        participants_lower = {p.lower() for p in activity["participants"]}
+        if norm_lower in participants_lower:
+            raise HTTPException(status_code=409, detail="Already signed up")
 
     # Enforce capacity
     if len(activity["participants"]) >= activity["max_participants"]:
@@ -127,4 +130,4 @@ def signup_for_activity(activity_name: str, email: str):
 
     # Add student (store in lowercase for consistency)
     activity["participants"].append(norm_lower)
-    return {"message": f"Signed up {norm_lower} for {activity_name}"}
+    return {"message": f"Signed up {normalized} for {activity_name}"}
