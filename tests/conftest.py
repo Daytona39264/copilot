@@ -15,12 +15,15 @@ from src.app import app, activities as activities_store
 @pytest.fixture(autouse=True)
 def reset_activities():
     # Snapshot the in-memory activities and restore after each test
-    snapshot = copy.deepcopy(activities_store)
+    # Store only the participants lists which change during tests
+    snapshot = {name: act["participants"][:] for name, act in activities_store.items()}
     try:
         yield
     finally:
-        activities_store.clear()
-        activities_store.update(copy.deepcopy(snapshot))
+        # Restore only the participants lists instead of deep copying entire structure
+        for name, participants in snapshot.items():
+            if name in activities_store:
+                activities_store[name]["participants"] = participants[:]
 
 
 @pytest.fixture()

@@ -17,7 +17,7 @@ app = FastAPI(title="Mergington High School API",
 
 # Mount the static files directory
 current_dir = Path(__file__).parent
-app.mount("/static", StaticFiles(directory=os.path.join(Path(__file__).parent,
+app.mount("/static", StaticFiles(directory=os.path.join(current_dir,
           "static")), name="static")
 
 # In-memory activity database
@@ -115,14 +115,16 @@ def signup_for_activity(activity_name: str, email: str):
     activity = activities[activity_name]
 
     # Prevent duplicate signups (case-insensitive)
+    # Use set for O(1) lookup instead of O(n) linear search
     norm_lower = normalized.lower()
-    if any(p.lower() == norm_lower for p in activity["participants"]):
+    participants_lower = {p.lower() for p in activity["participants"]}
+    if norm_lower in participants_lower:
         raise HTTPException(status_code=409, detail="Already signed up")
 
     # Enforce capacity
     if len(activity["participants"]) >= activity["max_participants"]:
         raise HTTPException(status_code=409, detail="Activity is full")
 
-    # Add student
+    # Add student (store in lowercase for consistency)
     activity["participants"].append(norm_lower)
-    return {"message": f"Signed up {normalized} for {activity_name}"}
+    return {"message": f"Signed up {norm_lower} for {activity_name}"}
