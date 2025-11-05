@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  # Main application with AI features
+  app:
+    build:
+      context: ../..
+      dockerfile: examples/docker/Dockerfile.app
+    container_name: school-activities-app
+    ports:
+      - "8000:8000"
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+    restart: unless-stopped
+    networks:
+      - app-network
+
+  # MCP Server
+  mcp-server:
+    build:
+      context: ../..
+      dockerfile: examples/docker/Dockerfile.mcp
+    container_name: school-activities-mcp
+    ports:
+      - "5000:5000"
+    restart: unless-stopped
+    networks:
+      - app-network
+
+  # GitHub MCP Server (optional - requires GitHub token)
+  github-mcp:
+    image: ghcr.io/klavis-ai/github-mcp-server:latest
+    container_name: github-mcp
+    ports:
+      - "5001:5000"
+    environment:
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+    restart: unless-stopped
+    networks:
+      - app-network
+    # Only start if GITHUB_TOKEN is set
+    profiles:
+      - with-github
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  app-data:

@@ -1,5 +1,15 @@
+# Web Framework
 fastapi
 uvicorn
+
+# Testing
 pytest
 pytest-cov
 httpx
+
+# AI Integration
+anthropic>=0.39.0
+
+# Additional utilities
+requests
+python-dotenv

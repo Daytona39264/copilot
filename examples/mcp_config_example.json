@@ -1,0 +1,33 @@
+{
+  "mcpServers": {
+    "school-activities": {
+      "type": "http",
+      "url": "http://localhost:5000",
+      "description": "School activities MCP server providing tools and resources for managing extracurricular activities",
+      "tools": [
+        "get_activities",
+        "get_activity_details",
+        "check_availability"
+      ],
+      "resources": [
+        "activities://catalog",
+        "activities://stats"
+      ]
+    },
+    "github": {
+      "type": "http",
+      "url": "http://localhost:5001",
+      "description": "GitHub MCP server for repository operations (optional - requires GITHUB_TOKEN)",
+      "enabled": false
+    }
+  },
+  "environment": {
+    "ANTHROPIC_API_KEY": "your-anthropic-api-key-here",
+    "GITHUB_TOKEN": "ghp_your-github-token-here"
+  },
+  "settings": {
+    "timeout": 30000,
+    "retries": 3,
+    "logLevel": "info"
+  }
+}
