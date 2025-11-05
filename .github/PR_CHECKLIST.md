@@ -1,0 +1,9 @@
+- Title: concise and descriptive, include issue ref if applicable (e.g., Fix: validate input (closes #42))
+- Description: what changed, why, and how to test
+- Tests: unit/integration tests added or updated
+- Docs: README or docs updated if public behavior changed
+- CI: all required CI checks passing
+- Reviews: requested reviewers / CODEOWNERS satisfied
+- Conflicts: branch up-to-date with base (rebase or merge)
+- Changelog: entry added if repository requires it
+- Ready: resolve conversations and mark ready-for-merge
