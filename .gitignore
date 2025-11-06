@@ -40,3 +40,38 @@ Thumbs.db
 .actrc*
 
 __pycache__/
+
+# Security - Secrets and Tokens #
+##################################
+# Never commit sensitive credentials
+.env
+.env.local
+.env.*.local
+*.key
+*.pem
+*.token
+*.secret
+secrets.*
+credentials.*
+.secrets
+.secrets.*
+auth.json
+.netrc
+
+# API Keys and Tokens
+*_token
+*_key
+*_secret
+*.credentials
+
+# Cloud provider credentials
+.aws/
+.azure/
+.gcloud/
+
+# SSH keys
+id_rsa
+id_dsa
+id_ecdsa
+id_ed25519
+*.ppk
