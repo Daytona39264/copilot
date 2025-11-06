@@ -12,20 +12,23 @@ Remember, it's self-paced so feel free to take a break! ☕️
 
 ---
 
-## ⚠️ SECURITY ALERT
+## ⚠️ SECURITY ALERT - ACTION REQUIRED
 
 **A GitHub Personal Access Token was exposed in PR #33.** 
 
-**IMMEDIATE ACTION REQUIRED:**
-1. Revoke the exposed token at https://github.com/settings/tokens
-2. Edit or close PR #33 to remove the token from the description
-3. Review audit logs for unauthorized access
+### 👉 [START HERE - 5 Minute Security Fix](./START_HERE.md)
 
-**See security documentation:**
+**Quick Links:**
+- **[START_HERE.md](./START_HERE.md)** - 🚨 **READ THIS FIRST** - 5-minute action plan
 - **[SECURITY_ALERT.md](./SECURITY_ALERT.md)** - Quick overview and immediate steps
 - **[SECURITY_CHECKLIST.md](./SECURITY_CHECKLIST.md)** - Step-by-step checklist
 - **[SECURITY_INCIDENT_REPORT.md](./SECURITY_INCIDENT_REPORT.md)** - Full incident details
 - **[.github/SECURITY.md](./.github/SECURITY.md)** - Security policy and best practices
+
+**What you must do:**
+1. Revoke the exposed token at https://github.com/settings/tokens
+2. Edit or close PR #33 to remove the token from the description
+3. Review audit logs for unauthorized access
 
 ---
 
