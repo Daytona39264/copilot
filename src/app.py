@@ -131,8 +131,10 @@ def signup_for_activity(activity_name: str, email: str):
     activity = activities[activity_name]
 
     # Prevent duplicate signups (case-insensitive)
+    # Convert to set for O(1) lookup instead of O(n) iteration
     norm_lower = normalized.lower()
-    if any(p.lower() == norm_lower for p in activity["participants"]):
+    participants_lower = {p.lower() for p in activity["participants"]}
+    if norm_lower in participants_lower:
         raise HTTPException(status_code=409, detail="Already signed up")
 
     # Enforce capacity
@@ -230,15 +232,19 @@ def chat_about_activities(request: ChatRequest):
         )
 
     try:
-        # Build context from activities
-        activities_context = "Available extracurricular activities:\n\n"
+        # Build context from activities using efficient string building
+        activities_list = []
         for name, details in activities.items():
             participants_count = len(details["participants"])
             max_participants = details["max_participants"]
-            activities_context += f"- {name}:\n"
-            activities_context += f"  Description: {details['description']}\n"
-            activities_context += f"  Schedule: {details['schedule']}\n"
-            activities_context += f"  Capacity: {participants_count}/{max_participants}\n\n"
+            activities_list.append(
+                f"- {name}:\n"
+                f"  Description: {details['description']}\n"
+                f"  Schedule: {details['schedule']}\n"
+                f"  Capacity: {participants_count}/{max_participants}\n"
+            )
+        
+        activities_context = "Available extracurricular activities:\n\n" + "\n".join(activities_list)
 
         system_prompt = f"""You are a helpful assistant for Mergington High School's
 extracurricular activities program. Answer questions about activities, schedules,
