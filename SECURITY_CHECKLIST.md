@@ -38,8 +38,11 @@ cat .gitignore | grep -A 5 "Security"
 git check-ignore .env
 # Should output: .env
 
-# 3. Check for any secrets in git history
-git log --all --oneline | grep -i "token\|secret\|key"
+# 3. Check for any secrets in git history (limited to recent 1000 commits)
+git log --all --oneline -n 1000 | grep -i "token\|secret\|key"
+
+# For more thorough search (may be slow on large repos):
+git log -S 'token' --source --all --oneline | head -20
 ```
 
 ### Enable GitHub Security Features

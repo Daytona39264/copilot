@@ -116,7 +116,7 @@ detect-secrets scan --baseline .secrets.baseline
 # Add to .pre-commit-config.yaml
 repos:
   - repo: https://github.com/Yelp/detect-secrets
-    rev: v1.4.0
+    rev: v1.5.0  # Use a recent version
     hooks:
       - id: detect-secrets
         args: ['--baseline', '.secrets.baseline']
@@ -209,9 +209,19 @@ If a secret is accidentally exposed:
 3. **Notify the security team**
 4. **Remove the secret** from Git history if committed:
    ```bash
-   # Use BFG Repo-Cleaner or git-filter-repo
-   # WARNING: This rewrites history
-   git filter-repo --invert-paths --path-glob '**/*secret*'
+   # WARNING: Rewriting git history is destructive!
+   # 1. BACKUP your repository first: git clone --mirror <repo-url> backup.git
+   # 2. Notify all contributors about the history rewrite
+   # 3. Use git-filter-repo (preferred) or BFG Repo-Cleaner
+   
+   # Install git-filter-repo (if not already installed)
+   # pip install git-filter-repo
+   
+   # Example usage - consult documentation for your specific case:
+   # git filter-repo --path <path-to-file-with-secret> --invert-paths
+   
+   # See: https://github.com/newren/git-filter-repo
+   # Or use BFG: https://rtyley.github.io/bfg-repo-cleaner/
    ```
 5. **Document the incident**
 6. **Review and improve** security practices

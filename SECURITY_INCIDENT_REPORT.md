@@ -10,7 +10,7 @@
 
 A GitHub Personal Access Token (PAT) was accidentally exposed in Pull Request #33's description. The token appears in the "Original prompt" section of the PR body.
 
-**Exposed Token Pattern:** `github_pat_11BOFE5MY0VG59JSBuwp39_*` (redacted for security)
+**Exposed Token Pattern:** `github_pat_***` (fully redacted for security)
 
 **Location:** 
 - PR #33 Description: https://github.com/Daytona39264/copilot/pull/33
@@ -33,13 +33,13 @@ A GitHub Personal Access Token (PAT) was accidentally exposed in Pull Request #3
 
 ### 1. **REVOKE THE TOKEN IMMEDIATELY** ⚠️
 ```bash
-# Via GitHub Web Interface:
+# Via GitHub Web Interface (RECOMMENDED):
 # 1. Go to https://github.com/settings/tokens
 # 2. Find the token (it will be listed by name/date)
 # 3. Click "Delete" or "Revoke"
 
-# Via GitHub CLI (if available):
-gh auth token | gh api user/tokens -X DELETE
+# Note: The gh CLI cannot directly delete tokens from the command line
+# You must use the GitHub web interface for token management
 ```
 
 ### 2. **Edit or Close PR #33**
