@@ -41,6 +41,13 @@ Thumbs.db
 
 __pycache__/
 
+# Python test coverage #
+########################
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+
 # Security - Secrets and Tokens #
 ##################################
 # Never commit sensitive credentials
