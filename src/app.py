@@ -33,8 +33,7 @@ app = FastAPI(title="Mergington High School API",
 
 # Mount the static files directory
 current_dir = Path(__file__).parent
-app.mount("/static", StaticFiles(directory=os.path.join(Path(__file__).parent,
-          "static")), name="static")
+app.mount("/static", StaticFiles(directory=os.path.join(current_dir, "static")), name="static")
 
 # In-memory activity database
 activities = {
@@ -326,14 +325,16 @@ def analyze_participation():
         )
 
     try:
-        # Prepare participation data
+        # Prepare participation data efficiently
         analysis_data = []
         for name, details in activities.items():
-            capacity_percentage = (len(details["participants"]) / details["max_participants"]) * 100
+            participant_count = len(details["participants"])
+            max_participants = details["max_participants"]
+            capacity_percentage = (participant_count / max_participants) * 100
             analysis_data.append({
                 "activity": name,
-                "participants": len(details["participants"]),
-                "capacity": details["max_participants"],
+                "participants": participant_count,
+                "capacity": max_participants,
                 "fill_rate": f"{capacity_percentage:.1f}%"
             })
 
