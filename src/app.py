@@ -183,13 +183,11 @@ def suggest_activities(request: ActivitySuggestionRequest):
     try:
         interests_str = ", ".join(request.student_interests)
 
-        # Get list of available activities
-        available_activities = list(activities.keys())
-
+        # Optimize: Join keys directly without converting to list first
         prompt = f"""Based on the following student information, suggest the top 3 activities from this list
 that would be the best fit, and explain why:
 
-Available Activities: {", ".join(available_activities)}
+Available Activities: {", ".join(activities.keys())}
 
 Student Profile:
 - Grade Level: {request.grade_level}
