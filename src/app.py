@@ -363,10 +363,6 @@ Keep the analysis concise and practical."""
 # Weather Dashboard Endpoints
 # ============================================================================
 
-class WeatherRequest(BaseModel):
-    location: str
-
-
 @app.get("/weather")
 def get_weather(location: str = "New York"):
     """

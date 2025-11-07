@@ -42,8 +42,11 @@ document.addEventListener("DOMContentLoaded", () => {
       document.getElementById("weather-wind").textContent = data.wind_speed
         ? `${data.wind_speed.toFixed(1)} mph`
         : "N/A";
-      document.getElementById("weather-precipitation").textContent =
-        data.precipitation ? `${data.precipitation} inch` : "0 inch";
+      
+      const precip = data.precipitation || 0;
+      const precipUnit = precip === 1 ? "inch" : "inches";
+      document.getElementById("weather-precipitation").textContent = 
+        `${precip} ${precipUnit}`;
 
       if (data.timestamp) {
         const timestamp = new Date(data.timestamp);
