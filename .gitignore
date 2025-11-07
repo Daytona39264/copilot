@@ -40,3 +40,9 @@ Thumbs.db
 .actrc*
 
 __pycache__/
+
+# Test coverage files #
+#######################
+.coverage
+htmlcov/
+.pytest_cache/
