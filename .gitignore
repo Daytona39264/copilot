@@ -1,5 +1,11 @@
 *.temp*
 
+# Python
+.coverage
+htmlcov/
+*.pyc
+__pycache__/
+
 # Compiled source #
 ###################
 *.com
