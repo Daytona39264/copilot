@@ -15,6 +15,7 @@ from typing import List, Optional
 import os
 import re
 from pathlib import Path
+import requests
 
 # AI Integration (optional - only enabled if ANTHROPIC_API_KEY is set)
 try:
@@ -356,3 +357,119 @@ Keep the analysis concise and practical."""
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"AI Error: {str(e)}")
+
+
+# ============================================================================
+# Weather Dashboard Endpoints
+# ============================================================================
+
+class WeatherRequest(BaseModel):
+    location: str
+
+
+@app.get("/weather")
+def get_weather(location: str = "New York"):
+    """
+    Fetch weather data for a given location
+    Uses Open-Meteo free weather API with geocoding
+    """
+    try:
+        # First, geocode the location to get coordinates
+        geocode_url = "https://geocoding-api.open-meteo.com/v1/search"
+        geocode_params = {
+            "name": location,
+            "count": 1,
+            "language": "en",
+            "format": "json"
+        }
+        
+        geocode_response = requests.get(geocode_url, params=geocode_params, timeout=10)
+        geocode_response.raise_for_status()
+        geocode_data = geocode_response.json()
+        
+        if not geocode_data.get("results"):
+            raise HTTPException(status_code=404, detail=f"Location '{location}' not found")
+        
+        location_data = geocode_data["results"][0]
+        latitude = location_data["latitude"]
+        longitude = location_data["longitude"]
+        location_name = location_data.get("name", location)
+        country = location_data.get("country", "")
+        
+        # Fetch weather data using coordinates
+        weather_url = "https://api.open-meteo.com/v1/forecast"
+        weather_params = {
+            "latitude": latitude,
+            "longitude": longitude,
+            "current": "temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m",
+            "temperature_unit": "fahrenheit",
+            "wind_speed_unit": "mph",
+            "precipitation_unit": "inch",
+            "timezone": "auto"
+        }
+        
+        weather_response = requests.get(weather_url, params=weather_params, timeout=10)
+        weather_response.raise_for_status()
+        weather_data = weather_response.json()
+        
+        current = weather_data.get("current", {})
+        
+        # Map weather codes to descriptions
+        weather_code = current.get("weather_code", 0)
+        weather_descriptions = {
+            0: "Clear sky",
+            1: "Mainly clear",
+            2: "Partly cloudy",
+            3: "Overcast",
+            45: "Foggy",
+            48: "Depositing rime fog",
+            51: "Light drizzle",
+            53: "Moderate drizzle",
+            55: "Dense drizzle",
+            61: "Slight rain",
+            63: "Moderate rain",
+            65: "Heavy rain",
+            71: "Slight snow",
+            73: "Moderate snow",
+            75: "Heavy snow",
+            77: "Snow grains",
+            80: "Slight rain showers",
+            81: "Moderate rain showers",
+            82: "Violent rain showers",
+            85: "Slight snow showers",
+            86: "Heavy snow showers",
+            95: "Thunderstorm",
+            96: "Thunderstorm with slight hail",
+            99: "Thunderstorm with heavy hail"
+        }
+        
+        weather_condition = weather_descriptions.get(weather_code, "Unknown")
+        
+        return {
+            "location": f"{location_name}, {country}",
+            "coordinates": {
+                "latitude": latitude,
+                "longitude": longitude
+            },
+            "temperature": current.get("temperature_2m"),
+            "feels_like": current.get("apparent_temperature"),
+            "humidity": current.get("relative_humidity_2m"),
+            "conditions": weather_condition,
+            "weather_code": weather_code,
+            "wind_speed": current.get("wind_speed_10m"),
+            "precipitation": current.get("precipitation"),
+            "timestamp": current.get("time"),
+            "units": {
+                "temperature": "°F",
+                "humidity": "%",
+                "wind_speed": "mph",
+                "precipitation": "inch"
+            }
+        }
+    
+    except HTTPException:
+        raise
+    except requests.RequestException as e:
+        raise HTTPException(status_code=503, detail=f"Weather service unavailable: {str(e)}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching weather: {str(e)}")

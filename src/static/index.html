@@ -13,6 +13,45 @@
     </header>
 
     <main>
+      <section id="weather-container">
+        <h3>Weather Dashboard</h3>
+        <div class="weather-controls">
+          <input type="text" id="location-input" placeholder="Enter location (e.g., New York)" />
+          <button id="fetch-weather-btn">Get Weather</button>
+          <button id="refresh-weather-btn" class="hidden">Refresh</button>
+        </div>
+        <div id="weather-display" class="hidden">
+          <div class="weather-main">
+            <h4 id="weather-location"></h4>
+            <div class="weather-temp">
+              <span id="weather-temperature" class="temperature"></span>
+              <span class="temp-unit">°F</span>
+            </div>
+            <p id="weather-conditions" class="weather-conditions"></p>
+          </div>
+          <div class="weather-details">
+            <div class="weather-detail-item">
+              <span class="detail-label">Feels Like:</span>
+              <span id="weather-feels-like"></span>
+            </div>
+            <div class="weather-detail-item">
+              <span class="detail-label">Humidity:</span>
+              <span id="weather-humidity"></span>
+            </div>
+            <div class="weather-detail-item">
+              <span class="detail-label">Wind Speed:</span>
+              <span id="weather-wind"></span>
+            </div>
+            <div class="weather-detail-item">
+              <span class="detail-label">Precipitation:</span>
+              <span id="weather-precipitation"></span>
+            </div>
+          </div>
+          <p id="weather-timestamp" class="weather-timestamp"></p>
+        </div>
+        <div id="weather-error" class="hidden error"></div>
+      </section>
+
       <section id="activities-container">
         <h3>Available Activities</h3>
         <div id="activities-list">
