@@ -33,8 +33,7 @@ app = FastAPI(title="Mergington High School API",
 
 # Mount the static files directory
 current_dir = Path(__file__).parent
-app.mount("/static", StaticFiles(directory=os.path.join(Path(__file__).parent,
-          "static")), name="static")
+app.mount("/static", StaticFiles(directory=os.path.join(current_dir, "static")), name="static")
 
 # In-memory activity database
 activities = {
@@ -131,8 +130,10 @@ def signup_for_activity(activity_name: str, email: str):
     activity = activities[activity_name]
 
     # Prevent duplicate signups (case-insensitive)
+    # Optimize: Use set for O(1) lookup instead of O(n) linear search
     norm_lower = normalized.lower()
-    if any(p.lower() == norm_lower for p in activity["participants"]):
+    participants_lower = {p.lower() for p in activity["participants"]}
+    if norm_lower in participants_lower:
         raise HTTPException(status_code=409, detail="Already signed up")
 
     # Enforce capacity
@@ -231,14 +232,17 @@ def chat_about_activities(request: ChatRequest):
 
     try:
         # Build context from activities
-        activities_context = "Available extracurricular activities:\n\n"
+        # Optimize: Use list and join instead of repeated string concatenation
+        context_parts = ["Available extracurricular activities:\n"]
         for name, details in activities.items():
             participants_count = len(details["participants"])
             max_participants = details["max_participants"]
-            activities_context += f"- {name}:\n"
-            activities_context += f"  Description: {details['description']}\n"
-            activities_context += f"  Schedule: {details['schedule']}\n"
-            activities_context += f"  Capacity: {participants_count}/{max_participants}\n\n"
+            context_parts.append(f"- {name}:\n")
+            context_parts.append(f"  Description: {details['description']}\n")
+            context_parts.append(f"  Schedule: {details['schedule']}\n")
+            context_parts.append(f"  Capacity: {participants_count}/{max_participants}\n\n")
+        
+        activities_context = "".join(context_parts)
 
         system_prompt = f"""You are a helpful assistant for Mergington High School's
 extracurricular activities program. Answer questions about activities, schedules,
@@ -321,15 +325,16 @@ def analyze_participation():
 
     try:
         # Prepare participation data
-        analysis_data = []
-        for name, details in activities.items():
-            capacity_percentage = (len(details["participants"]) / details["max_participants"]) * 100
-            analysis_data.append({
+        # Optimize: Use list comprehension for more efficient data building
+        analysis_data = [
+            {
                 "activity": name,
-                "participants": len(details["participants"]),
-                "capacity": details["max_participants"],
-                "fill_rate": f"{capacity_percentage:.1f}%"
-            })
+                "participants": (participant_count := len(details["participants"])),
+                "capacity": (max_cap := details["max_participants"]),
+                "fill_rate": f"{(participant_count / max_cap) * 100:.1f}%"
+            }
+            for name, details in activities.items()
+        ]
 
         prompt = f"""Analyze the following participation data for Mergington High School's
 extracurricular activities:
