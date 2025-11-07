@@ -131,6 +131,9 @@ def signup_for_activity(activity_name: str, email: str):
 
     # Prevent duplicate signups (case-insensitive)
     # Optimize: Use set for O(1) lookup instead of O(n) linear search
+    # Note: Set is created per request to avoid cache invalidation complexity
+    # with mutable participants list. For typical activity sizes (<100 participants),
+    # set creation overhead is minimal compared to repeated .lower() calls in O(n) search
     norm_lower = normalized.lower()
     participants_lower = {p.lower() for p in activity["participants"]}
     if norm_lower in participants_lower:
@@ -329,7 +332,7 @@ def analyze_participation():
                 "activity": name,
                 "participants": (participant_count := len(details["participants"])),
                 "capacity": (max_cap := details["max_participants"]),
-                "fill_rate": f"{(participant_count / max_cap) * 100:.1f}%"
+                "fill_rate": f"{(participant_count / max_cap * 100) if max_cap > 0 else 0:.1f}%"
             }
             for name, details in activities.items()
         ]
