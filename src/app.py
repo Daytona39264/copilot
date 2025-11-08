@@ -97,7 +97,7 @@ activities = {
 
 
 @app.get("/")
-def root():
+def redirect_to_home_page():
     return RedirectResponse(url="/static/index.html")
 
 
@@ -106,7 +106,7 @@ def get_activities():
     return activities
 
 
-EMAIL_RE = re.compile(r"^[^@\s]+@mergington\.edu$", re.IGNORECASE)
+EMAIL_VALIDATION_PATTERN = re.compile(r"^[^@\s]+@mergington\.edu$", re.IGNORECASE)
 
 
 @app.post("/activities/{activity_name}/signup")
@@ -124,16 +124,16 @@ def signup_for_activity(activity_name: str, email: str):
         raise HTTPException(status_code=404, detail="Activity not found")
 
     # Normalize and validate email
-    normalized = (email or "").strip()
-    if not normalized or not EMAIL_RE.match(normalized):
+    normalized_email = (email or "").strip()
+    if not normalized_email or not EMAIL_VALIDATION_PATTERN.match(normalized_email):
         raise HTTPException(status_code=400, detail="Invalid email")
 
     # Get the specific activity
     activity = activities[activity_name]
 
     # Prevent duplicate signups (case-insensitive)
-    norm_lower = normalized.lower()
-    if any(p.lower() == norm_lower for p in activity["participants"]):
+    normalized_email_lowercase = normalized_email.lower()
+    if any(participant_email.lower() == normalized_email_lowercase for participant_email in activity["participants"]):
         raise HTTPException(status_code=409, detail="Already signed up")
 
     # Enforce capacity
@@ -141,8 +141,8 @@ def signup_for_activity(activity_name: str, email: str):
         raise HTTPException(status_code=409, detail="Activity is full")
 
     # Add student
-    activity["participants"].append(norm_lower)
-    return {"message": f"Signed up {normalized} for {activity_name}"}
+    activity["participants"].append(normalized_email_lowercase)
+    return {"message": f"Signed up {normalized_email} for {activity_name}"}
 
 
 # ============================================================================
@@ -181,7 +181,7 @@ def suggest_activities(request: ActivitySuggestionRequest):  # pragma: no cover 
         )
 
     try:
-        interests_str = ", ".join(request.student_interests)
+        formatted_interests = ", ".join(request.student_interests)
 
         # Get list of available activities
         available_activities = list(activities.keys())
@@ -193,7 +193,7 @@ Available Activities: {", ".join(available_activities)}
 
 Student Profile:
 - Grade Level: {request.grade_level}
-- Interests: {interests_str}
+- Interests: {formatted_interests}
 
 For each suggestion, provide:
 1. Activity name
@@ -214,8 +214,8 @@ Keep the response concise and encouraging."""
             "grade_level": request.grade_level
         }
 
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"AI Error: {str(e)}")
+    except Exception as error:
+        raise HTTPException(status_code=500, detail=f"AI Error: {str(error)}")
 
 
 @app.post("/ai/chat")
@@ -261,8 +261,8 @@ Be friendly, encouraging, and informative."""
             "message": request.message
         }
 
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"AI Error: {str(e)}")
+    except Exception as error:
+        raise HTTPException(status_code=500, detail=f"AI Error: {str(error)}")
 
 
 @app.get("/ai/activity-summary/{activity_name}")
@@ -304,8 +304,8 @@ to join. Focus on benefits, skills they'll learn, and the fun they'll have."""
             "ai_enhanced_summary": response.content[0].text
         }
 
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"AI Error: {str(e)}")
+    except Exception as error:
+        raise HTTPException(status_code=500, detail=f"AI Error: {str(error)}")
 
 
 @app.get("/ai/participation-insights")
@@ -355,5 +355,5 @@ Keep the analysis concise and practical."""
             "ai_insights": response.content[0].text
         }
 
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"AI Error: {str(e)}")
+    except Exception as error:
+        raise HTTPException(status_code=500, detail=f"AI Error: {str(error)}")
