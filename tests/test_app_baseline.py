@@ -27,3 +27,11 @@ def test_get_activities_shape():
     assert "max_participants" in chess
     assert "participants" in chess
     assert isinstance(chess["participants"], list)
+
+
+def test_ai_status_endpoint_reports_disabled_when_no_key():
+    resp = client.get("/ai/status")
+    assert resp.status_code == 200
+    payload = resp.json()
+    assert payload["ai_enabled"] is False
+    assert "Set ANTHROPIC_API_KEY" in payload["message"]
