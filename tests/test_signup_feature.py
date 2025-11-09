@@ -77,3 +77,34 @@ def test_invalid_email_returns_400_and_no_change():
 
     after = len(client.get("/activities").json()[activity]["participants"])
     assert after == before
+
+
+def test_email_case_is_preserved_in_storage():
+    """Test that email case is preserved when stored in participants list.
+    
+    When a user signs up with 'NewStudent@mergington.edu', that exact string
+    (preserving case) should be stored, not 'newstudent@mergington.edu'.
+    This matches what the API response message shows.
+    """
+    activity = "Drama Club"
+    email_with_caps = "NewStudent@mergington.edu"
+    
+    # Sign up with mixed case email
+    resp = signup(activity, email_with_caps)
+    assert resp.status_code == 200
+    
+    # Verify response message shows original case
+    assert email_with_caps in resp.json()["message"], \
+        "Response should show original case"
+    
+    # Get the stored participants
+    activities = client.get("/activities").json()
+    participants = activities[activity]["participants"]
+    
+    # Find the matching email (case-insensitive search)
+    matching_emails = [p for p in participants if p.lower() == email_with_caps.lower()]
+    assert len(matching_emails) == 1, "Should have exactly one matching email"
+    
+    # Verify the email case is preserved (not converted to lowercase)
+    assert matching_emails[0] == email_with_caps, \
+        f"Email case should be preserved. Expected '{email_with_caps}', got '{matching_emails[0]}'"
