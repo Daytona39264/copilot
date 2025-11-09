@@ -15,6 +15,7 @@ from typing import List, Optional
 import os
 import re
 from pathlib import Path
+from datetime import datetime
 
 # AI Integration (optional - only enabled if ANTHROPIC_API_KEY is set)
 anthropic_client = None
@@ -95,6 +96,9 @@ activities = {
     }
 }
 
+# In-memory issues/feedback database
+issues = []
+
 
 @app.get("/")
 def root():
@@ -165,6 +169,101 @@ def get_activity_availability(activity_name: str):
         raise HTTPException(status_code=404, detail="Activity not found")
 
     return _availability_for(activity_name)
+
+
+# ============================================================================
+# Issue/Feedback Management System
+# ============================================================================
+
+class IssueCreate(BaseModel):
+    title: str
+    description: str
+    category: str
+    related_activity: Optional[str] = None
+    reporter_email: str
+
+
+class Issue(BaseModel):
+    id: int
+    title: str
+    description: str
+    category: str
+    related_activity: Optional[str] = None
+    reporter_email: str
+    created_at: str
+    status: str = "open"
+
+
+@app.post("/issues")
+def create_issue(issue: IssueCreate):
+    """Create a new issue or feedback item"""
+    # Validate email
+    normalized = (issue.reporter_email or "").strip()
+    if not normalized or not EMAIL_RE.match(normalized):
+        raise HTTPException(status_code=400, detail="Invalid email")
+    
+    # Validate related activity if provided
+    if issue.related_activity and issue.related_activity not in activities:
+        raise HTTPException(status_code=404, detail="Related activity not found")
+    
+    # Validate category
+    valid_categories = ["bug", "feature_request", "feedback", "question", "other"]
+    if issue.category not in valid_categories:
+        raise HTTPException(status_code=400, detail=f"Invalid category. Must be one of: {', '.join(valid_categories)}")
+    
+    # Create new issue
+    new_issue = {
+        "id": len(issues) + 1,
+        "title": issue.title,
+        "description": issue.description,
+        "category": issue.category,
+        "related_activity": issue.related_activity,
+        "reporter_email": normalized.lower(),
+        "created_at": datetime.now().isoformat(),
+        "status": "open"
+    }
+    
+    issues.append(new_issue)
+    return new_issue
+
+
+@app.get("/issues")
+def get_issues(category: Optional[str] = None, status: Optional[str] = None):
+    """Get all issues, optionally filtered by category or status"""
+    filtered_issues = issues
+    
+    if category:
+        filtered_issues = [i for i in filtered_issues if i["category"] == category]
+    
+    if status:
+        filtered_issues = [i for i in filtered_issues if i["status"] == status]
+    
+    return filtered_issues
+
+
+@app.get("/issues/{issue_id}")
+def get_issue(issue_id: int):
+    """Get a specific issue by ID"""
+    for issue in issues:
+        if issue["id"] == issue_id:
+            return issue
+    
+    raise HTTPException(status_code=404, detail="Issue not found")
+
+
+@app.patch("/issues/{issue_id}/status")
+def update_issue_status(issue_id: int, status: str):
+    """Update the status of an issue"""
+    valid_statuses = ["open", "in_progress", "resolved", "closed"]
+    if status not in valid_statuses:
+        raise HTTPException(status_code=400, detail=f"Invalid status. Must be one of: {', '.join(valid_statuses)}")
+    
+    for issue in issues:
+        if issue["id"] == issue_id:
+            issue["status"] = status
+            return issue
+    
+    raise HTTPException(status_code=404, detail="Issue not found")
 
 
 # ============================================================================
@@ -375,6 +474,68 @@ Keep the analysis concise and practical."""
         return {
             "participation_data": analysis_data,
             "ai_insights": response.content[0].text
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"AI Error: {str(e)}")
+
+
+@app.get("/ai/issues-summary")
+def analyze_issues():  # pragma: no cover - requires external AI service
+    """
+    Analyze and summarize all issues using AI
+    Requires ANTHROPIC_API_KEY environment variable
+    """
+    if not AI_ENABLED:
+        raise HTTPException(
+            status_code=503,
+            detail="AI features not enabled. Set ANTHROPIC_API_KEY environment variable."
+        )
+
+    if not issues:
+        return {
+            "total_issues": 0,
+            "summary": "No issues have been reported yet."
+        }
+
+    try:
+        # Prepare issues data for analysis
+        issues_by_category = {}
+        for issue in issues:
+            category = issue["category"]
+            if category not in issues_by_category:
+                issues_by_category[category] = []
+            issues_by_category[category].append({
+                "id": issue["id"],
+                "title": issue["title"],
+                "status": issue["status"],
+                "related_activity": issue.get("related_activity")
+            })
+
+        prompt = f"""Analyze the following issues and feedback for Mergington High School's
+extracurricular activities system:
+
+Total Issues: {len(issues)}
+Issues by Category: {issues_by_category}
+
+Provide:
+1. A high-level summary of the main themes and concerns
+2. Priority recommendations (which issues should be addressed first)
+3. Common patterns across multiple issues
+4. Suggestions for improving the activities program based on the feedback
+
+Keep the analysis concise and actionable."""
+
+        response = anthropic_client.messages.create(
+            model="claude-sonnet-4-5-20250929",
+            max_tokens=700,
+            messages=[{"role": "user", "content": prompt}]
+        )
+
+        return {
+            "total_issues": len(issues),
+            "issues_by_category": issues_by_category,
+            "ai_analysis": response.content[0].text
         }
 
     except Exception as e:
