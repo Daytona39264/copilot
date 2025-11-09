@@ -40,3 +40,14 @@ Thumbs.db
 .actrc*
 
 __pycache__/
+
+# Virtual environments
+.venv/
+venv/
+venv_new/
+env/
+ENV/
+
+# Test coverage
+.coverage
+htmlcov/
