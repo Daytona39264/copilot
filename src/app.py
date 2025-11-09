@@ -7,7 +7,7 @@ for extracurricular activities at Mergington High School.
 Enhanced with AI capabilities powered by Anthropic's Claude.
 """
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request, Header
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
@@ -15,6 +15,17 @@ from typing import List, Optional
 import os
 import re
 from pathlib import Path
+
+# Notion Webhook Integration
+from src.notion_webhook import (
+    NotionWebhookEvent,
+    WebhookEventLog,
+    webhook_event_logs,
+    process_webhook_event,
+    verify_webhook_signature,
+    is_data_source_event,
+    is_legacy_event
+)
 
 # AI Integration (optional - only enabled if ANTHROPIC_API_KEY is set)
 anthropic_client = None
@@ -379,3 +390,130 @@ Keep the analysis concise and practical."""
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"AI Error: {str(e)}")
+
+
+# ============================================================================
+# Notion Webhook Endpoints (API v2025-09-03 with multi-source database support)
+# ============================================================================
+
+# Webhook secret (should be configured via environment variable in production)
+NOTION_WEBHOOK_SECRET = os.environ.get("NOTION_WEBHOOK_SECRET", "")
+
+
+@app.post("/webhooks/notion")
+async def notion_webhook_handler(
+    request: Request,
+    notion_signature: Optional[str] = Header(None, alias="notion-signature"),
+    notion_timestamp: Optional[str] = Header(None, alias="notion-timestamp")
+):
+    """
+    Handle Notion webhook events
+    
+    Supports Notion API v2025-09-03 with multi-source database features:
+    - New data_source events (content_updated, schema_updated, created, moved, deleted, undeleted)
+    - data_source_id in parent object
+    - Backward compatible with legacy event types
+    """
+    # Get raw body for signature verification
+    body = await request.body()
+    
+    # Verify webhook signature if secret is configured
+    if NOTION_WEBHOOK_SECRET and notion_signature and notion_timestamp:
+        if not verify_webhook_signature(
+            notion_signature,
+            notion_timestamp,
+            body,
+            NOTION_WEBHOOK_SECRET
+        ):
+            raise HTTPException(status_code=401, detail="Invalid webhook signature")
+    
+    # Parse the webhook event
+    try:
+        event_data = await request.json()
+        event = NotionWebhookEvent(**event_data)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Invalid webhook payload: {str(e)}")
+    
+    # Process the event
+    try:
+        log_entry = process_webhook_event(event)
+        
+        return {
+            "status": "success",
+            "event_id": log_entry.event_id,
+            "event_type": log_entry.event_type,
+            "data_source_id": log_entry.data_source_id,
+            "is_data_source_event": is_data_source_event(event.event_type.value),
+            "is_legacy_event": is_legacy_event(event.event_type.value)
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error processing webhook: {str(e)}")
+
+
+@app.get("/webhooks/events")
+def get_webhook_events(
+    event_type: Optional[str] = None,
+    limit: int = 50
+):
+    """
+    Get webhook event logs
+    
+    Query parameters:
+    - event_type: Filter by event type
+    - limit: Maximum number of events to return (default: 50)
+    """
+    events = webhook_event_logs
+    
+    # Filter by event type if specified
+    if event_type:
+        events = [e for e in events if e.event_type == event_type]
+    
+    # Limit results
+    events = events[-limit:]
+    
+    return {
+        "total": len(events),
+        "events": events
+    }
+
+
+@app.get("/webhooks/stats")
+def get_webhook_stats():
+    """
+    Get webhook statistics
+    
+    Returns summary of events by type, including breakdown of:
+    - New data_source events
+    - Legacy events
+    - Events with data_source_id
+    """
+    total_events = len(webhook_event_logs)
+    
+    # Count by event type
+    event_type_counts = {}
+    data_source_event_count = 0
+    legacy_event_count = 0
+    events_with_data_source_id = 0
+    
+    for event in webhook_event_logs:
+        # Count by type
+        event_type_counts[event.event_type] = event_type_counts.get(event.event_type, 0) + 1
+        
+        # Count data_source vs legacy
+        if is_data_source_event(event.event_type):
+            data_source_event_count += 1
+        elif is_legacy_event(event.event_type):
+            legacy_event_count += 1
+        
+        # Count events with data_source_id
+        if event.data_source_id:
+            events_with_data_source_id += 1
+    
+    return {
+        "total_events": total_events,
+        "data_source_events": data_source_event_count,
+        "legacy_events": legacy_event_count,
+        "events_with_data_source_id": events_with_data_source_id,
+        "by_event_type": event_type_counts
+    }
+
