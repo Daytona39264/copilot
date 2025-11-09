@@ -167,6 +167,18 @@ def get_activity_availability(activity_name: str):
     return _availability_for(activity_name)
 
 
+@app.get("/activities-with-availability")
+def get_all_activities_with_availability():
+    """Return all activities with their availability information included."""
+    result = {}
+    for activity_name, activity_data in activities.items():
+        result[activity_name] = {
+            **activity_data,
+            "availability": _availability_for(activity_name)
+        }
+    return result
+
+
 # ============================================================================
 # AI-Powered Endpoints (require ANTHROPIC_API_KEY environment variable)
 # ============================================================================
