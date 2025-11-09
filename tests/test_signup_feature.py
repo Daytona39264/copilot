@@ -105,9 +105,6 @@ def test_email_case_is_preserved_in_storage():
     matching_emails = [p for p in participants if p.lower() == email_with_caps.lower()]
     assert len(matching_emails) == 1, "Should have exactly one matching email"
     
-    # BUG: This assertion will FAIL because current code stores norm_lower (lowercase)
-    # instead of normalized (original case)
-    # Expected: 'NewStudent@mergington.edu'
-    # Actual (buggy): 'newstudent@mergington.edu'
+    # Verify the email case is preserved (not converted to lowercase)
     assert matching_emails[0] == email_with_caps, \
         f"Email case should be preserved. Expected '{email_with_caps}', got '{matching_emails[0]}'"
