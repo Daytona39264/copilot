@@ -1,5 +1,11 @@
 *.temp*
 
+# Node modules #
+node_modules/
+
+# Tauri build artifacts #
+src-tauri/target/
+
 # Compiled source #
 ###################
 *.com

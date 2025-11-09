@@ -1,0 +1,17 @@
+{
+  "name": "copilot",
+  "version": "0.1.0",
+  "description": "GitHub Copilot Desktop App",
+  "main": "index.js",
+  "scripts": {
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.0.0"
+  }
+}
