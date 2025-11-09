@@ -141,7 +141,7 @@ def signup_for_activity(activity_name: str, email: str):
         raise HTTPException(status_code=409, detail="Activity is full")
 
     # Add student
-    activity["participants"].append(norm_lower)
+    activity["participants"].append(normalized)
     return {"message": f"Signed up {normalized} for {activity_name}"}
 
 
