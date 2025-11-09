@@ -1,38 +1,57 @@
 ---
 name: Bug report
 about: Create a report to help us improve
-title: ''
-labels: ''
+title: '[Bug]: '
+labels: 'bug'
 assignees: ''
 
 ---
 
-**Describe the bug**
-A clear and concise description of what the bug is.
+<!-- Please fill out this template with as much detail as possible. Remove any sections that don't apply. -->
 
-**To Reproduce**
-Steps to reproduce the behavior:
-1. Go to '...'
-2. Click on '....'
-3. Scroll down to '....'
-4. See error
+## Bug Description
+<!-- A clear and concise description of what the bug is. Replace this comment with your description. -->
 
-**Expected behavior**
-A clear and concise description of what you expected to happen.
 
-**Screenshots**
-If applicable, add screenshots to help explain your problem.
+## Steps to Reproduce
+<!-- Detailed steps to reproduce the issue -->
+1. 
+2. 
+3. 
 
-**Desktop (please complete the following information):**
- - OS: [e.g. iOS]
- - Browser [e.g. chrome, safari]
- - Version [e.g. 22]
+## Expected Behavior
+<!-- A clear and concise description of what you expected to happen -->
 
-**Smartphone (please complete the following information):**
- - Device: [e.g. iPhone6]
- - OS: [e.g. iOS8.1]
- - Browser [e.g. stock browser, safari]
- - Version [e.g. 22]
 
-**Additional context**
-Add any other context about the problem here.
+## Actual Behavior
+<!-- What actually happened instead -->
+
+
+## Environment
+<!-- Please complete the following information -->
+- OS: 
+- Python Version: 
+- FastAPI Version: 
+
+## API Endpoint
+<!-- If applicable, which endpoint is affected? -->
+
+
+## Request/Response Details
+<!-- If applicable, include the request you made and the response you received -->
+```json
+Request:
+
+
+Response:
+
+```
+
+## Logs/Error Messages
+<!-- If applicable, include any error messages or logs -->
+```
+
+```
+
+## Additional Context
+<!-- Add any other context about the problem here, such as screenshots, related issues, or possible solutions -->
