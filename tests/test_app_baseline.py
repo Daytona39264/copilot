@@ -35,3 +35,21 @@ def test_ai_status_endpoint_reports_disabled_when_no_key():
     payload = resp.json()
     assert payload["ai_enabled"] is False
     assert "Set ANTHROPIC_API_KEY" in payload["message"]
+
+
+def test_get_activity_availability():
+    resp = client.get("/activities/Chess Club/availability")
+    assert resp.status_code == 200
+    payload = resp.json()
+    assert payload == {
+        "activity_name": "Chess Club",
+        "total_slots": 12,
+        "taken_slots": 2,
+        "available_slots": 10,
+    }
+
+
+def test_get_activity_availability_missing():
+    resp = client.get("/activities/Unknown Club/availability")
+    assert resp.status_code == 404
+    assert resp.json() == {"detail": "Activity not found"}
