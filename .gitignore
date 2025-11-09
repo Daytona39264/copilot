@@ -40,3 +40,8 @@ Thumbs.db
 .actrc*
 
 __pycache__/
+
+# Python coverage #
+###################
+.coverage
+htmlcov/
