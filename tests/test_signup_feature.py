@@ -77,3 +77,22 @@ def test_invalid_email_returns_400_and_no_change():
 
     after = len(client.get("/activities").json()[activity]["participants"])
     assert after == before
+
+
+def test_email_case_is_preserved():
+    """Test that the email case is preserved when storing participants"""
+    activity = "Basketball Team"
+    email = "MixedCase@mergington.edu"
+    
+    # Sign up with mixed case email
+    resp = signup(activity, email)
+    assert resp.status_code == 200
+    
+    # Check that the stored email preserves the case
+    participants = client.get("/activities").json()[activity]["participants"]
+    assert email in participants, f"Expected {email} in participants, but got {participants}"
+    
+    # Also verify that duplicate detection is case-insensitive
+    resp2 = signup(activity, email.lower())
+    assert resp2.status_code == 409
+    assert "already" in resp2.json()["detail"].lower()
