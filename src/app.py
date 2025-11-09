@@ -34,7 +34,7 @@ app = FastAPI(title="Mergington High School API",
 
 # Mount the static files directory
 current_dir = Path(__file__).parent
-app.mount("/static", StaticFiles(directory=os.path.join(Path(__file__).parent,
+app.mount("/static", StaticFiles(directory=os.path.join(current_dir,
           "static")), name="static")
 
 # In-memory activity database
@@ -232,14 +232,17 @@ def chat_about_activities(request: ChatRequest):  # pragma: no cover - requires 
 
     try:
         # Build context from activities
-        activities_context = "Available extracurricular activities:\n\n"
+        activities_list = []
         for name, details in activities.items():
             participants_count = len(details["participants"])
             max_participants = details["max_participants"]
-            activities_context += f"- {name}:\n"
-            activities_context += f"  Description: {details['description']}\n"
-            activities_context += f"  Schedule: {details['schedule']}\n"
-            activities_context += f"  Capacity: {participants_count}/{max_participants}\n\n"
+            activities_list.append(
+                f"- {name}:\n"
+                f"  Description: {details['description']}\n"
+                f"  Schedule: {details['schedule']}\n"
+                f"  Capacity: {participants_count}/{max_participants}\n"
+            )
+        activities_context = "Available extracurricular activities:\n\n" + "\n".join(activities_list)
 
         system_prompt = f"""You are a helpful assistant for Mergington High School's
 extracurricular activities program. Answer questions about activities, schedules,
@@ -324,10 +327,11 @@ def analyze_participation():  # pragma: no cover - requires external AI service
         # Prepare participation data
         analysis_data = []
         for name, details in activities.items():
-            capacity_percentage = (len(details["participants"]) / details["max_participants"]) * 100
+            participant_count = len(details["participants"])
+            capacity_percentage = (participant_count / details["max_participants"]) * 100
             analysis_data.append({
                 "activity": name,
-                "participants": len(details["participants"]),
+                "participants": participant_count,
                 "capacity": details["max_participants"],
                 "fill_rate": f"{capacity_percentage:.1f}%"
             })
