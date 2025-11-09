@@ -40,3 +40,34 @@ Thumbs.db
 .actrc*
 
 __pycache__/
+
+# Python virtual environment #
+##############################
+.venv/
+venv/
+env/
+ENV/
+
+# Python coverage and testing #
+################################
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+.tox/
+.hypothesis/
+
+# Python build artifacts #
+##########################
+*.egg-info/
+dist/
+build/
+*.egg
+
+# IDE specific files #
+######################
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
