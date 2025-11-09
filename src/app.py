@@ -145,6 +145,28 @@ def signup_for_activity(activity_name: str, email: str):
     return {"message": f"Signed up {normalized} for {activity_name}"}
 
 
+def _availability_for(activity_name: str) -> dict:
+    """Return availability details for a given activity."""
+    activity = activities[activity_name]
+    total_slots = activity["max_participants"]
+    taken_slots = len(activity["participants"])
+    return {
+        "activity_name": activity_name,
+        "total_slots": total_slots,
+        "taken_slots": taken_slots,
+        "available_slots": max(total_slots - taken_slots, 0),
+    }
+
+
+@app.get("/activities/{activity_name}/availability")
+def get_activity_availability(activity_name: str):
+    """Return capacity information for a single activity."""
+    if activity_name not in activities:
+        raise HTTPException(status_code=404, detail="Activity not found")
+
+    return _availability_for(activity_name)
+
+
 # ============================================================================
 # AI-Powered Endpoints (require ANTHROPIC_API_KEY environment variable)
 # ============================================================================
