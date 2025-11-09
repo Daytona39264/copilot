@@ -140,7 +140,7 @@ def signup_for_activity(activity_name: str, email: str):
     if len(activity["participants"]) >= activity["max_participants"]:
         raise HTTPException(status_code=409, detail="Activity is full")
 
-    # Add student (preserve original formatting while preventing case-sensitive duplicates)
+    # Add student (preserve original formatting while preventing case-insensitive duplicates)
     activity["participants"].append(normalized)
     return {"message": f"Signed up {normalized} for {activity_name}"}
 
