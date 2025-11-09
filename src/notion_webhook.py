@@ -3,6 +3,12 @@ Notion Webhook Integration for API v2025-09-03
 
 Supports multi-source database features with new data_source events
 and data_source_id in parent objects.
+
+This module provides:
+- Event type definitions for both new and legacy webhook events
+- Pydantic models for webhook payload validation
+- Event processing and logging functionality
+- Signature verification for webhook security
 """
 
 from enum import Enum
