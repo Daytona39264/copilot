@@ -29,6 +29,9 @@ try:  # pragma: no cover - optional dependency
 except ImportError:  # pragma: no cover - optional dependency
     AI_ENABLED = False
 
+# AI Configuration Constants
+AI_MODEL = "claude-sonnet-4-5-20250929"
+
 app = FastAPI(title="Mergington High School API",
               description="API for viewing and signing up for extracurricular activities")
 
@@ -181,6 +184,55 @@ class ChatRequest(BaseModel):
     context: Optional[str] = None
 
 
+# ============================================================================
+# AI Helper Functions
+# ============================================================================
+
+def require_ai_enabled():
+    """Check if AI features are enabled, raise HTTPException if not"""
+    if not AI_ENABLED:
+        raise HTTPException(
+            status_code=503,
+            detail="AI features not enabled. Set ANTHROPIC_API_KEY environment variable."
+        )
+
+
+def call_anthropic_api(prompt: str, max_tokens: int = 500, system: Optional[str] = None):
+    """
+    Call Anthropic API with error handling
+    
+    Args:
+        prompt: The user prompt to send
+        max_tokens: Maximum tokens for the response
+        system: Optional system prompt
+        
+    Returns:
+        The text content from the API response
+        
+    Raises:
+        HTTPException: If the API call fails
+    """
+    try:
+        kwargs = {
+            "model": AI_MODEL,
+            "max_tokens": max_tokens,
+            "messages": [{"role": "user", "content": prompt}]
+        }
+        
+        if system:
+            kwargs["system"] = system
+            
+        response = anthropic_client.messages.create(**kwargs)
+        return response.content[0].text
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"AI Error: {str(e)}")
+
+
+# ============================================================================
+# AI Endpoints
+# ============================================================================
+
 @app.get("/ai/status")
 def ai_status():
     """Check if AI features are enabled"""
@@ -196,19 +248,14 @@ def suggest_activities(request: ActivitySuggestionRequest):  # pragma: no cover 
     AI-powered activity suggestions based on student interests
     Requires ANTHROPIC_API_KEY environment variable
     """
-    if not AI_ENABLED:
-        raise HTTPException(
-            status_code=503,
-            detail="AI features not enabled. Set ANTHROPIC_API_KEY environment variable."
-        )
-
-    try:
-        interests_str = ", ".join(request.student_interests)
-
-        # Get list of available activities
-        available_activities = list(activities.keys())
-
-        prompt = f"""Based on the following student information, suggest the top 3 activities from this list
+    require_ai_enabled()
+    
+    interests_str = ", ".join(request.student_interests)
+    
+    # Get list of available activities
+    available_activities = list(activities.keys())
+    
+    prompt = f"""Based on the following student information, suggest the top 3 activities from this list
 that would be the best fit, and explain why:
 
 Available Activities: {", ".join(available_activities)}
@@ -223,21 +270,14 @@ For each suggestion, provide:
 3. What the student might enjoy about it
 
 Keep the response concise and encouraging."""
-
-        response = anthropic_client.messages.create(
-            model="claude-sonnet-4-5-20250929",
-            max_tokens=600,
-            messages=[{"role": "user", "content": prompt}]
-        )
-
-        return {
-            "suggestions": response.content[0].text,
-            "student_interests": request.student_interests,
-            "grade_level": request.grade_level
-        }
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"AI Error: {str(e)}")
+    
+    suggestions = call_anthropic_api(prompt, max_tokens=600)
+    
+    return {
+        "suggestions": suggestions,
+        "student_interests": request.student_interests,
+        "grade_level": request.grade_level
+    }
 
 
 @app.post("/ai/chat")
@@ -246,45 +286,32 @@ def chat_about_activities(request: ChatRequest):  # pragma: no cover - requires 
     Chat with AI about activities and the school program
     Requires ANTHROPIC_API_KEY environment variable
     """
-    if not AI_ENABLED:
-        raise HTTPException(
-            status_code=503,
-            detail="AI features not enabled. Set ANTHROPIC_API_KEY environment variable."
-        )
-
-    try:
-        # Build context from activities
-        activities_context = "Available extracurricular activities:\n\n"
-        for name, details in activities.items():
-            participants_count = len(details["participants"])
-            max_participants = details["max_participants"]
-            activities_context += f"- {name}:\n"
-            activities_context += f"  Description: {details['description']}\n"
-            activities_context += f"  Schedule: {details['schedule']}\n"
-            activities_context += f"  Capacity: {participants_count}/{max_participants}\n\n"
-
-        system_prompt = f"""You are a helpful assistant for Mergington High School's
+    require_ai_enabled()
+    
+    # Build context from activities
+    activities_context = "Available extracurricular activities:\n\n"
+    for name, details in activities.items():
+        participants_count = len(details["participants"])
+        max_participants = details["max_participants"]
+        activities_context += f"- {name}:\n"
+        activities_context += f"  Description: {details['description']}\n"
+        activities_context += f"  Schedule: {details['schedule']}\n"
+        activities_context += f"  Capacity: {participants_count}/{max_participants}\n\n"
+    
+    system_prompt = f"""You are a helpful assistant for Mergington High School's
 extracurricular activities program. Answer questions about activities, schedules,
 and help students find activities that match their interests.
 
 {activities_context}
 
 Be friendly, encouraging, and informative."""
-
-        response = anthropic_client.messages.create(
-            model="claude-sonnet-4-5-20250929",
-            max_tokens=500,
-            system=system_prompt,
-            messages=[{"role": "user", "content": request.message}]
-        )
-
-        return {
-            "response": response.content[0].text,
-            "message": request.message
-        }
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"AI Error: {str(e)}")
+    
+    response_text = call_anthropic_api(request.message, max_tokens=500, system=system_prompt)
+    
+    return {
+        "response": response_text,
+        "message": request.message
+    }
 
 
 @app.get("/ai/activity-summary/{activity_name}")
@@ -293,19 +320,14 @@ def generate_activity_summary(activity_name: str):  # pragma: no cover - require
     Generate an enhanced description for an activity using AI
     Requires ANTHROPIC_API_KEY environment variable
     """
-    if not AI_ENABLED:
-        raise HTTPException(
-            status_code=503,
-            detail="AI features not enabled. Set ANTHROPIC_API_KEY environment variable."
-        )
-
+    require_ai_enabled()
+    
     if activity_name not in activities:
         raise HTTPException(status_code=404, detail="Activity not found")
-
-    try:
-        activity = activities[activity_name]
-
-        prompt = f"""Create an engaging, student-friendly summary for this extracurricular activity:
+    
+    activity = activities[activity_name]
+    
+    prompt = f"""Create an engaging, student-friendly summary for this extracurricular activity:
 
 Activity: {activity_name}
 Current Description: {activity['description']}
@@ -313,21 +335,14 @@ Schedule: {activity['schedule']}
 
 Write a compelling 3-4 sentence description that would excite high school students
 to join. Focus on benefits, skills they'll learn, and the fun they'll have."""
-
-        response = anthropic_client.messages.create(
-            model="claude-sonnet-4-5-20250929",
-            max_tokens=300,
-            messages=[{"role": "user", "content": prompt}]
-        )
-
-        return {
-            "activity_name": activity_name,
-            "original_description": activity["description"],
-            "ai_enhanced_summary": response.content[0].text
-        }
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"AI Error: {str(e)}")
+    
+    ai_summary = call_anthropic_api(prompt, max_tokens=300)
+    
+    return {
+        "activity_name": activity_name,
+        "original_description": activity["description"],
+        "ai_enhanced_summary": ai_summary
+    }
 
 
 @app.get("/ai/participation-insights")
@@ -336,25 +351,20 @@ def analyze_participation():  # pragma: no cover - requires external AI service
     Analyze participation patterns across activities using AI
     Requires ANTHROPIC_API_KEY environment variable
     """
-    if not AI_ENABLED:
-        raise HTTPException(
-            status_code=503,
-            detail="AI features not enabled. Set ANTHROPIC_API_KEY environment variable."
-        )
-
-    try:
-        # Prepare participation data
-        analysis_data = []
-        for name, details in activities.items():
-            capacity_percentage = (len(details["participants"]) / details["max_participants"]) * 100
-            analysis_data.append({
-                "activity": name,
-                "participants": len(details["participants"]),
-                "capacity": details["max_participants"],
-                "fill_rate": f"{capacity_percentage:.1f}%"
-            })
-
-        prompt = f"""Analyze the following participation data for Mergington High School's
+    require_ai_enabled()
+    
+    # Prepare participation data
+    analysis_data = []
+    for name, details in activities.items():
+        capacity_percentage = (len(details["participants"]) / details["max_participants"]) * 100
+        analysis_data.append({
+            "activity": name,
+            "participants": len(details["participants"]),
+            "capacity": details["max_participants"],
+            "fill_rate": f"{capacity_percentage:.1f}%"
+        })
+    
+    prompt = f"""Analyze the following participation data for Mergington High School's
 extracurricular activities:
 
 {analysis_data}
@@ -365,17 +375,10 @@ Provide:
 3. 2-3 actionable recommendations to improve overall participation
 
 Keep the analysis concise and practical."""
-
-        response = anthropic_client.messages.create(
-            model="claude-sonnet-4-5-20250929",
-            max_tokens=600,
-            messages=[{"role": "user", "content": str(prompt)}]
-        )
-
-        return {
-            "participation_data": analysis_data,
-            "ai_insights": response.content[0].text
-        }
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"AI Error: {str(e)}")
+    
+    insights = call_anthropic_api(str(prompt), max_tokens=600)
+    
+    return {
+        "participation_data": analysis_data,
+        "ai_insights": insights
+    }
