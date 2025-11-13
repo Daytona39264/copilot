@@ -11,17 +11,17 @@ def signup(activity: str, email: str):
 
 
 def test_404_when_activity_not_found():
-    resp = signup("Nonexistent Activity", "student@mergington.edu")
-    assert resp.status_code == 404
-    assert resp.json()["detail"] == "Activity not found"
+    response = signup("Nonexistent Activity", "student@mergington.edu")
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Activity not found"
 
 
 def test_happy_path_adds_participant():
     # Get count before
     before = len(client.get("/activities").json()["Chess Club"]["participants"])
-    resp = signup("Chess Club", "newstudent@mergington.edu")
-    assert resp.status_code == 200
-    assert "Signed up" in resp.json().get("message", "")
+    response = signup("Chess Club", "newstudent@mergington.edu")
+    assert response.status_code == 200
+    assert "Signed up" in response.json().get("message", "")
     after = len(client.get("/activities").json()["Chess Club"]["participants"])
     assert after == before + 1
 
@@ -30,9 +30,9 @@ def test_duplicate_signup_returns_409_and_does_not_change_count():
     activity = "Gym Class"
     email = "john@mergington.edu"  # already in seed data
     before = len(client.get("/activities").json()[activity]["participants"])
-    resp = signup(activity, email)
-    assert resp.status_code == 409
-    assert resp.json()["detail"].lower().startswith("already")
+    response = signup(activity, email)
+    assert response.status_code == 409
+    assert response.json()["detail"].lower().startswith("already")
     after = len(client.get("/activities").json()[activity]["participants"])
     assert after == before
 
@@ -50,13 +50,13 @@ def test_capacity_limit_returns_409_when_full():
     # Add until full
     for i in range(to_add):
         email = f"captest{i}@mergington.edu"
-        r = signup(activity, email)
-        assert r.status_code == 200
+        response = signup(activity, email)
+        assert response.status_code == 200
 
     # Next one should fail
-    resp = signup(activity, "another@mergington.edu")
-    assert resp.status_code == 409
-    assert "full" in resp.json()["detail"].lower()
+    response_full = signup(activity, "another@mergington.edu")
+    assert response_full.status_code == 409
+    assert "full" in response_full.json()["detail"].lower()
 
 
 def test_invalid_email_returns_400_and_no_change():
@@ -64,16 +64,16 @@ def test_invalid_email_returns_400_and_no_change():
     before = len(client.get("/activities").json()[activity]["participants"])
 
     # invalid format
-    r1 = signup(activity, "not-an-email")
-    assert r1.status_code == 400
+    response_invalid_format = signup(activity, "not-an-email")
+    assert response_invalid_format.status_code == 400
 
     # wrong domain
-    r2 = signup(activity, "student@example.com")
-    assert r2.status_code == 400
+    response_wrong_domain = signup(activity, "student@example.com")
+    assert response_wrong_domain.status_code == 400
 
     # empty
-    r3 = signup(activity, " ")
-    assert r3.status_code == 400
+    response_empty = signup(activity, " ")
+    assert response_empty.status_code == 400
 
     after = len(client.get("/activities").json()[activity]["participants"])
     assert after == before

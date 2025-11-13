@@ -97,7 +97,7 @@ activities = {
 
 
 @app.get("/")
-def root():
+def redirect_to_home():
     return RedirectResponse(url="/static/index.html")
 
 
@@ -106,7 +106,7 @@ def get_activities():
     return activities
 
 
-EMAIL_RE = re.compile(r"^[^@\s]+@mergington\.edu$", re.IGNORECASE)
+MERGINGTON_EMAIL_PATTERN = re.compile(r"^[^@\s]+@mergington\.edu$", re.IGNORECASE)
 
 
 @app.post("/activities/{activity_name}/signup")
@@ -124,16 +124,16 @@ def signup_for_activity(activity_name: str, email: str):
         raise HTTPException(status_code=404, detail="Activity not found")
 
     # Normalize and validate email
-    normalized = (email or "").strip()
-    if not normalized or not EMAIL_RE.match(normalized):
+    normalized_email = (email or "").strip()
+    if not normalized_email or not MERGINGTON_EMAIL_PATTERN.match(normalized_email):
         raise HTTPException(status_code=400, detail="Invalid email")
 
     # Get the specific activity
     activity = activities[activity_name]
 
     # Prevent duplicate signups (case-insensitive)
-    norm_lower = normalized.lower()
-    if any(p.lower() == norm_lower for p in activity["participants"]):
+    normalized_email_lowercase = normalized_email.lower()
+    if any(p.lower() == normalized_email_lowercase for p in activity["participants"]):
         raise HTTPException(status_code=409, detail="Already signed up")
 
     # Enforce capacity
@@ -141,8 +141,8 @@ def signup_for_activity(activity_name: str, email: str):
         raise HTTPException(status_code=409, detail="Activity is full")
 
     # Add student
-    activity["participants"].append(norm_lower)
-    return {"message": f"Signed up {normalized} for {activity_name}"}
+    activity["participants"].append(normalized_email_lowercase)
+    return {"message": f"Signed up {normalized_email} for {activity_name}"}
 
 
 def _availability_for(activity_name: str) -> dict:
@@ -182,7 +182,7 @@ class ChatRequest(BaseModel):
 
 
 @app.get("/ai/status")
-def ai_status():
+def get_ai_status():
     """Check if AI features are enabled"""
     return {
         "ai_enabled": AI_ENABLED,
@@ -203,7 +203,7 @@ def suggest_activities(request: ActivitySuggestionRequest):  # pragma: no cover 
         )
 
     try:
-        interests_str = ", ".join(request.student_interests)
+        formatted_interests = ", ".join(request.student_interests)
 
         # Get list of available activities
         available_activities = list(activities.keys())
@@ -215,7 +215,7 @@ Available Activities: {", ".join(available_activities)}
 
 Student Profile:
 - Grade Level: {request.grade_level}
-- Interests: {interests_str}
+- Interests: {formatted_interests}
 
 For each suggestion, provide:
 1. Activity name
@@ -331,7 +331,7 @@ to join. Focus on benefits, skills they'll learn, and the fun they'll have."""
 
 
 @app.get("/ai/participation-insights")
-def analyze_participation():  # pragma: no cover - requires external AI service
+def get_participation_insights():  # pragma: no cover - requires external AI service
     """
     Analyze participation patterns across activities using AI
     Requires ANTHROPIC_API_KEY environment variable
