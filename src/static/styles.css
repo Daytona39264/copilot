@@ -35,6 +35,12 @@ main {
   justify-content: center;
 }
 
+#weather-container {
+  order: -1;
+  width: 100%;
+  max-width: 100%;
+}
+
 @media (min-width: 768px) {
   main {
     grid-template-columns: 2fr 1fr;
@@ -164,4 +170,132 @@ footer {
   margin-top: 30px;
   padding: 20px;
   color: #666;
+}
+
+/* Weather Dashboard Styles */
+.weather-controls {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+#location-input {
+  flex: 1;
+  min-width: 200px;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 16px;
+}
+
+#fetch-weather-btn,
+#refresh-weather-btn {
+  background-color: #1a237e;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  font-size: 16px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+#fetch-weather-btn:hover,
+#refresh-weather-btn:hover {
+  background-color: #3949ab;
+}
+
+#refresh-weather-btn {
+  background-color: #0066cc;
+}
+
+#refresh-weather-btn:hover {
+  background-color: #0052a3;
+}
+
+#weather-display {
+  margin-top: 20px;
+  padding: 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 10px;
+  color: white;
+}
+
+.weather-main {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.weather-main h4 {
+  font-size: 24px;
+  margin-bottom: 10px;
+  color: white;
+}
+
+.weather-temp {
+  font-size: 48px;
+  font-weight: bold;
+  margin: 10px 0;
+}
+
+.temperature {
+  font-size: 64px;
+  line-height: 1;
+}
+
+.temp-unit {
+  font-size: 32px;
+  vertical-align: top;
+}
+
+.weather-conditions {
+  font-size: 20px;
+  margin-top: 10px;
+  text-transform: capitalize;
+}
+
+.weather-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 15px;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.weather-detail-item {
+  background-color: rgba(255, 255, 255, 0.1);
+  padding: 12px;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.detail-label {
+  display: block;
+  font-size: 14px;
+  opacity: 0.9;
+  margin-bottom: 5px;
+}
+
+.weather-detail-item span:last-child {
+  display: block;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.weather-timestamp {
+  margin-top: 15px;
+  font-size: 12px;
+  text-align: center;
+  opacity: 0.8;
+}
+
+#weather-error {
+  margin-top: 15px;
+  padding: 15px;
+  background-color: #ffebee;
+  color: #c62828;
+  border: 1px solid #ef9a9a;
+  border-radius: 5px;
 }

@@ -4,6 +4,87 @@ document.addEventListener("DOMContentLoaded", () => {
   const signupForm = document.getElementById("signup-form");
   const messageDiv = document.getElementById("message");
 
+  // Weather Dashboard Elements
+  const locationInput = document.getElementById("location-input");
+  const fetchWeatherBtn = document.getElementById("fetch-weather-btn");
+  const refreshWeatherBtn = document.getElementById("refresh-weather-btn");
+  const weatherDisplay = document.getElementById("weather-display");
+  const weatherError = document.getElementById("weather-error");
+
+  // Function to fetch weather data
+  async function fetchWeather(location) {
+    try {
+      weatherError.classList.add("hidden");
+      weatherDisplay.classList.add("hidden");
+
+      const response = await fetch(
+        `/weather?location=${encodeURIComponent(location)}`
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.detail || "Failed to fetch weather data");
+      }
+
+      const data = await response.json();
+
+      // Update weather display
+      document.getElementById("weather-location").textContent = data.location;
+      document.getElementById("weather-temperature").textContent =
+        data.temperature?.toFixed(1) || "N/A";
+      document.getElementById("weather-conditions").textContent =
+        data.conditions || "N/A";
+      document.getElementById("weather-feels-like").textContent =
+        data.feels_like ? `${data.feels_like.toFixed(1)}°F` : "N/A";
+      document.getElementById("weather-humidity").textContent = data.humidity
+        ? `${data.humidity}%`
+        : "N/A";
+      document.getElementById("weather-wind").textContent = data.wind_speed
+        ? `${data.wind_speed.toFixed(1)} mph`
+        : "N/A";
+      
+      const precip = data.precipitation || 0;
+      const precipUnit = precip === 1 ? "inch" : "inches";
+      document.getElementById("weather-precipitation").textContent = 
+        `${precip} ${precipUnit}`;
+
+      if (data.timestamp) {
+        const timestamp = new Date(data.timestamp);
+        document.getElementById("weather-timestamp").textContent =
+          `Last updated: ${timestamp.toLocaleString()}`;
+      }
+
+      weatherDisplay.classList.remove("hidden");
+      refreshWeatherBtn.classList.remove("hidden");
+    } catch (error) {
+      weatherError.textContent = error.message;
+      weatherError.classList.remove("hidden");
+      console.error("Error fetching weather:", error);
+    }
+  }
+
+  // Event listeners for weather
+  fetchWeatherBtn.addEventListener("click", () => {
+    const location = locationInput.value.trim() || "New York";
+    fetchWeather(location);
+  });
+
+  refreshWeatherBtn.addEventListener("click", () => {
+    const location = locationInput.value.trim() || "New York";
+    fetchWeather(location);
+  });
+
+  locationInput.addEventListener("keypress", (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      const location = locationInput.value.trim() || "New York";
+      fetchWeather(location);
+    }
+  });
+
+  // Load default weather on page load
+  fetchWeather("New York");
+
   // Function to fetch activities from API
   async function fetchActivities() {
     try {
